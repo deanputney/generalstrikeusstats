@@ -1,0 +1,83 @@
+name: Daily Data Scrape and Update
+
+on:
+  schedule:
+    # Run daily at 12:00 UTC (adjust as needed)
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 matplotlib numpy
+
+    - name: Scrape live site
+      id: scrape
+      run: |
+        python scrape_live_site.py
+      continue-on-error: true
+
+    - name: Check for changes
+      id: check_changes
+      run: |
+        if git diff --quiet; then
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Generate plots
+      if: steps.check_changes.outputs.has_changes == 'true'
+      run: |
+        python generate_all_plots_fine_grained.py
+
+    - name: Update README
+      if: steps.check_changes.outputs.has_changes == 'true'
+      run: |
+        python update_readme.py
+
+    - name: Commit and push changes
+      if: steps.check_changes.outputs.has_changes == 'true'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add -A
+        git commit -m "Automated data update: $(date -u '+%Y-%m-%d %H:%M UTC')
+
+        - Scraped latest data from generalstrikeus.com
+        - Updated fine-grained CSV with new entry
+        - Regenerated all visualization plots
+        - Updated README with current statistics
+
+        [skip ci]"
+        git push
+
+    - name: Create summary
+      if: always()
+      run: |
+        echo "## Daily Scrape Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]; then
+          echo "✅ New data detected and processed" >> $GITHUB_STEP_SUMMARY
+          echo "- Data scraped successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- Plots regenerated" >> $GITHUB_STEP_SUMMARY
+          echo "- README updated" >> $GITHUB_STEP_SUMMARY
+          echo "- Changes committed and pushed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "ℹ️ No new data (or scrape failed)" >> $GITHUB_STEP_SUMMARY
+          echo "- Latest data is already current" >> $GITHUB_STEP_SUMMARY
+          echo "- No changes made" >> $GITHUB_STEP_SUMMARY
+        fi

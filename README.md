@@ -7,10 +7,10 @@
 Scrapes and analyzes historical signup data for the General Strike US movement from Wayback Machine archives.
 
 **Current Status (as of January 31, 2026):**
-- **439,997 people committed** (+269.4% growth since November 2024)
-- **133 data points** collected from November 2024 to January 2026
+- **440,014 people committed** (+269.4% growth since November 2024)
+- **134 data points** collected from November 2024 to 2026
 - **4.00% progress** toward 11 million goal
-- **~1,178 people/day** average growth rate (last 30 days)
+- **~1,304 people/day** average growth rate (last 30 days)
 
 📊 **[View Detailed Analysis](RESULTS_2026-01-30.md)** - Comprehensive analysis with projections and insights
 
@@ -96,7 +96,25 @@ Plots are saved to `images/plots_finegrained/` or `images/plots_waybackonly/` by
 
 ## Updating the Dataset
 
-Simply run a scraper to check for new snapshots:
+### Automatic Updates (GitHub Actions)
+
+This repository automatically scrapes the live site daily via GitHub Actions:
+
+- **Schedule**: Runs daily at 12:00 UTC
+- **Process**:
+  1. Scrapes current data from generalstrikeus.com
+  2. Appends to fine-grained CSV if data is newer
+  3. Regenerates all visualization plots
+  4. Updates README with latest statistics
+  5. Commits and pushes changes automatically
+
+**Manual Trigger**: You can also trigger the workflow manually from the Actions tab on GitHub.
+
+### Manual Updates
+
+#### Scrape Wayback Machine Archives
+
+Fetch historical snapshots from the Wayback Machine:
 
 ```bash
 uv run python scrape_strike_data_all.py
@@ -106,6 +124,16 @@ The script will:
 - Automatically fetch the latest snapshots from the Wayback Machine CDX API
 - Skip dates with existing valid data
 - Save snapshot metadata to `wayback_snapshots.json`
+
+#### Scrape Live Site
+
+Get the current data from the live site:
+
+```bash
+python scrape_live_site.py
+```
+
+This appends the current count to the fine-grained CSV if it's newer than the latest entry.
 
 ## Visualization Gallery
 
@@ -119,9 +147,14 @@ The script will:
 ## Files
 
 ### Scrapers
-- `scrape_strike_data_all.py` - Scrapes all available snapshots (recommended)
-- `scrape_strike_data_simple.py` - Scrapes weekly snapshots (faster)
+- `scrape_live_site.py` - Scrapes current data from live site (used by GitHub Actions)
+- `scrape_strike_data_all.py` - Scrapes all available Wayback Machine snapshots (recommended)
+- `scrape_strike_data_simple.py` - Scrapes weekly Wayback Machine snapshots (faster)
 - `scrape_strike_data.py` - Playwright version (optional, for JS-heavy pages)
+
+### Automation
+- `.github/workflows/daily-scrape.yml` - GitHub Actions workflow for daily updates
+- `update_readme.py` - Updates README.md with latest statistics
 
 ### Plot Generators
 - `generate_all_plots_fine_grained.py` - Generate all plots from fine-grained data
