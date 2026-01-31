@@ -177,7 +177,7 @@ def sample_weekly_snapshots(snapshots):
     return sorted_snapshots
 
 
-def fetch_cdx_snapshots(from_date='20241101', to_date='20251231'):
+def fetch_cdx_snapshots(from_date='20241101', to_date='20261231'):
     """Fetch available snapshots from Wayback Machine CDX API."""
     cdx_url = (
         f"http://web.archive.org/cdx/search/cdx"
